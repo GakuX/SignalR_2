@@ -65,6 +65,9 @@ namespace signalr.backend.Hubs
             AugmenterNbConnexions();
 
             // TODO: Envoyer des message aux clients pour les mettre à jour
+            await Clients.All.SendAsync("UsersList", UserHandler.UserConnections.ToList()); 
+
+           
         }
 
         public async override Task OnDisconnectedAsync(Exception? exception)
