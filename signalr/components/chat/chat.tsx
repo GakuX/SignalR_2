@@ -3,15 +3,16 @@
 import { useState, useEffect } from 'react'
 // On doit commencer par ajouter signalr dans les node_modules: npm install @microsoft/signalr
 // Ensuite on inclut la librairie
-import { HubConnection } from '@microsoft/signalr'
+import { HubConnection, HubConnectionState } from '@microsoft/signalr'
 import { UserEntry, Channel } from '@/lib/models'
 import styles from './chat.module.css'
 
 interface ChatComponentProps {
   hubConnection: HubConnection | null;
+  onConnected?: () => void;
 }
 
-export default function ChatComponent({ hubConnection }: ChatComponentProps) {
+export default function ChatComponent({ hubConnection, onConnected }: ChatComponentProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<string[]>([]);
   const [usersList, setUsersList] = useState<UserEntry[]>([]);
@@ -38,11 +39,22 @@ export default function ChatComponent({ hubConnection }: ChatComponentProps) {
 
     // TODO: Écouter le message pour quitter un channel (lorsque le channel est effacé)
 
+    // Tous les handlers sont enregistrés : on peut maintenant démarrer la connexion.
+    if (hubConnection.state === HubConnectionState.Disconnected) {
+      hubConnection
+        .start()
+        .then(() => {
+          console.log("Connecté au Hub");
+          onConnected?.();
+        })
+        .catch(err => console.log('Error while starting connection: ' + err));
+    }
+
     return () => {
       hubConnection.off('UsersList');
       hubConnection.off('NewMessage');
     };
-  }, [hubConnection]);
+  }, [hubConnection, onConnected]);
 
   function joinChannel(channel: Channel) {
     if (!hubConnection) return;
